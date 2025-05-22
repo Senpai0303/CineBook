@@ -5,11 +5,6 @@
  * - Priyanshi Thapa
  * - Dipika Parmar
  * - Priyanka Takuli
- * 
- * Enhanced with:
- * - Indian Rupee currency
- * - Admin ticket cost management
- * - Cost display in customer movie list
  */
 
  #include <stdio.h>
