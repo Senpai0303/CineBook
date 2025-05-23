@@ -6,13 +6,12 @@
  * - Dipika Parmar
  * - Priyanka Takuli
  */
-
  #include <stdio.h>
  #include <stdlib.h>
  #include <string.h>
  #include <time.h>
  #include <ctype.h>
- 
+
  #define MAX_NAME 50
  #define MAX_DESC 200
  #define MAX_ROWS 10
@@ -23,35 +22,33 @@
  #define MAX_BOOKINGS 100
  #define MAX_CUSTOMERS 50
  #define ADMIN_PASSWORD "admin123"
- 
- 
+
  typedef struct Movie Movie;
  typedef struct Showtime Showtime;
  typedef struct Booking Booking;
  typedef struct Customer Customer;
  typedef struct MovieNode MovieNode;
  typedef struct ShowtimeNode ShowtimeNode;
- 
- 
+
  struct Movie {
      int id;
      char name[MAX_NAME];
      char genre[MAX_NAME];
      char description[MAX_DESC];
-     int duration; 
-     float base_price; 
+     int duration;
+     float base_price;
  };
- 
+
  struct Showtime {
      int id;
      int movie_id;
      char time[MAX_NAME];
      char date[MAX_NAME];
-     int seats[MAX_ROWS][MAX_COLS]; 
+     int seats[MAX_ROWS][MAX_COLS];
      float price;
      int hall_number;
  };
- 
+
  struct Booking {
      int id;
      int customer_id;
@@ -62,91 +59,74 @@
      char booking_time[MAX_NAME];
      float amount;
  };
- 
+
  struct Customer {
      int id;
      char name[MAX_NAME];
      char phone[MAX_NAME];
      char email[MAX_NAME];
  };
- 
- 
+
  struct MovieNode {
      Movie movie;
      MovieNode* next;
  };
- 
- 
+
  struct ShowtimeNode {
      Showtime showtime;
      ShowtimeNode* next;
  };
- 
- 
+
  MovieNode* movie_list = NULL;
  ShowtimeNode* showtime_list = NULL;
  Booking bookings[MAX_BOOKINGS];
  Customer customers[MAX_CUSTOMERS];
+
  int movie_count = 0;
  int showtime_count = 0;
  int booking_count = 0;
  int customer_count = 0;
- 
- 
- 
+
  
  MovieNode* create_movie_node(Movie movie);
  void add_movie(Movie movie);
  void list_all_movies();
- void list_movies_with_pricing(); 
  Movie* find_movie_by_id(int id);
  void edit_movie(int id);
  void delete_movie(int id);
- void manage_movie_pricing(int id); 
- 
- 
+
  ShowtimeNode* create_showtime_node(Showtime showtime);
  void add_showtime(Showtime showtime);
  void list_movie_showtimes(int movie_id);
  Showtime* find_showtime_by_id(int id);
  void initialize_seats(Showtime* showtime);
  void display_seats(Showtime* showtime);
- void edit_showtime_price(int id); 
- 
- 
+
  int add_booking(Booking booking);
  void list_customer_bookings(int customer_id);
  Booking* find_booking_by_id(int id);
  void cancel_booking(int id);
  void generate_ticket(Booking* booking);
- 
- 
+
  int add_customer(Customer customer);
  Customer* find_customer_by_id(int id);
  Customer* find_customer_by_phone(char* phone);
- 
- 
+
  void clear_screen();
  void display_header();
- void display_footer();
- void initialize_system();
- void load_demo_data();
  int generate_id(char* entity);
  void get_current_datetime(char* datetime);
- 
- 
+ void initialize_system();
+ void load_demo_data();
+
  void main_menu();
  void admin_menu();
  void customer_menu();
  void booking_menu();
  void movie_management_menu();
  void showtime_management_menu();
- void pricing_management_menu(); 
- void reports_menu();
- 
- 
- 
- 
+
+
  MovieNode* create_movie_node(Movie movie) {
      MovieNode* node = (MovieNode*)malloc(sizeof(MovieNode));
      if (!node) {
@@ -157,7 +137,7 @@
      node->next = NULL;
      return node;
  }
- 
+
  void add_movie(Movie movie) {
      MovieNode* node = create_movie_node(movie);
      if (movie_list == NULL) {
@@ -171,22 +151,20 @@
      }
      movie_count++;
  }
- 
+
  void list_all_movies() {
      if (movie_list == NULL) {
          printf("No movies available\n");
          return;
      }
-     
      printf("\n%-5s | %-30s | %-15s | %-10s | %-12s\n", "ID", "Title", "Genre", "Duration", "Base Price");
      printf("-------------------------------------------------------------------------\n");
-     
      MovieNode* temp = movie_list;
      while (temp != NULL) {
-         printf("%-5d | %-30s | %-15s | %d mins  | ₹%.2f\n", 
-                temp->movie.id, 
-                temp->movie.name, 
-                temp->movie.genre, 
+         printf("%-5d | %-30s | %-15s | %d mins  | Rs.%.2f\n",
+                temp->movie.id,
+                temp->movie.name,
+                temp->movie.genre,
                 temp->movie.duration,
                 temp->movie.base_price);
          temp = temp->next;
@@ -194,56 +172,6 @@
      printf("\n");
  }
 
- void list_movies_with_pricing() {
-     if (movie_list == NULL) {
-         printf("No movies available\n");
-         return;
-     }
-     
-     printf("\n%-5s | %-30s | %-15s | %-10s | %-12s\n", "ID", "Title", "Genre", "Duration", "Ticket Price");
-     printf("-------------------------------------------------------------------------\n");
-     
-     MovieNode* temp = movie_list;
-     while (temp != NULL) {
-         
-         float min_price = temp->movie.base_price;
-         float max_price = temp->movie.base_price;
-         int has_showtimes = 0;
-         
-         ShowtimeNode* showtime_temp = showtime_list;
-         while (showtime_temp != NULL) {
-             if (showtime_temp->showtime.movie_id == temp->movie.id) {
-                 has_showtimes = 1;
-                 if (showtime_temp->showtime.price < min_price) {
-                     min_price = showtime_temp->showtime.price;
-                 }
-                 if (showtime_temp->showtime.price > max_price) {
-                     max_price = showtime_temp->showtime.price;
-                 }
-             }
-             showtime_temp = showtime_temp->next;
-         }
-         
-         if (has_showtimes && min_price != max_price) {
-             printf("%-5d | %-30s | %-15s | %d mins  | ₹%.2f-₹%.2f\n", 
-                    temp->movie.id, 
-                    temp->movie.name, 
-                    temp->movie.genre, 
-                    temp->movie.duration,
-                    min_price, max_price);
-         } else {
-             printf("%-5d | %-30s | %-15s | %d mins  | ₹%.2f\n", 
-                    temp->movie.id, 
-                    temp->movie.name, 
-                    temp->movie.genre, 
-                    temp->movie.duration,
-                    has_showtimes ? min_price : temp->movie.base_price);
-         }
-         temp = temp->next;
-     }
-     printf("\n");
- }
- 
  Movie* find_movie_by_id(int id) {
      MovieNode* temp = movie_list;
      while (temp != NULL) {
@@ -254,96 +182,47 @@
      }
      return NULL;
  }
- 
+
  void edit_movie(int id) {
      Movie* movie = find_movie_by_id(id);
      if (movie == NULL) {
          printf("Movie not found\n");
          return;
      }
-     
      printf("\nEditing movie: %s\n", movie->name);
-     
      printf("Enter new name (or press enter to keep current): ");
      char input[MAX_NAME];
      fgets(input, MAX_NAME, stdin);
-     input[strcspn(input, "\n")] = 0; 
+     input[strcspn(input, "\n")] = 0;
      if (strlen(input) > 0) {
          strcpy(movie->name, input);
      }
-     
      printf("Enter new genre (or press enter to keep current): ");
      fgets(input, MAX_NAME, stdin);
      input[strcspn(input, "\n")] = 0;
      if (strlen(input) > 0) {
          strcpy(movie->genre, input);
      }
-     
      printf("Enter new description (or press enter to keep current): ");
      fgets(input, MAX_DESC, stdin);
      input[strcspn(input, "\n")] = 0;
      if (strlen(input) > 0) {
          strcpy(movie->description, input);
      }
-     
      printf("Enter new duration in minutes (or press enter to keep current): ");
      fgets(input, MAX_NAME, stdin);
      input[strcspn(input, "\n")] = 0;
      if (strlen(input) > 0) {
          movie->duration = atoi(input);
      }
-     
      printf("Movie updated successfully\n");
  }
 
- void manage_movie_pricing(int id) {
-     Movie* movie = find_movie_by_id(id);
-     if (movie == NULL) {
-         printf("Movie not found\n");
-         return;
-     }
-     
-     printf("\nManaging pricing for movie: %s\n", movie->name);
-     printf("Current base price: ₹%.2f\n", movie->base_price);
-     
-     printf("Enter new base price (₹): ");
-     float new_price;
-     scanf("%f", &new_price);
-     while(getchar() != '\n');
-     
-     if (new_price > 0) {
-         movie->base_price = new_price;
-         printf("Base price updated to ₹%.2f\n", new_price);
-         
-         printf("Do you want to update all existing showtimes for this movie? (y/n): ");
-         char choice;
-         scanf(" %c", &choice);
-         while(getchar() != '\n');
-         
-         if (tolower(choice) == 'y') {
-             ShowtimeNode* temp = showtime_list;
-             int updated_count = 0;
-             while (temp != NULL) {
-                 if (temp->showtime.movie_id == id) {
-                     temp->showtime.price = new_price;
-                     updated_count++;
-                 }
-                 temp = temp->next;
-             }
-             printf("Updated %d showtimes with new price\n", updated_count);
-         }
-     } else {
-         printf("Invalid price entered\n");
-     }
- }
- 
  void delete_movie(int id) {
      if (movie_list == NULL) {
          printf("No movies available\n");
          return;
      }
-     
-     
      if (movie_list->movie.id == id) {
          MovieNode* temp = movie_list;
          movie_list = movie_list->next;
@@ -352,11 +231,8 @@
          printf("Movie deleted successfully\n");
          return;
      }
-     
-     
      MovieNode* prev = movie_list;
      MovieNode* current = movie_list->next;
-     
      while (current != NULL) {
          if (current->movie.id == id) {
              prev->next = current->next;
@@ -368,11 +244,9 @@
          prev = current;
          current = current->next;
      }
-     
      printf("Movie not found\n");
  }
- 
- 
+
  ShowtimeNode* create_showtime_node(Showtime showtime) {
      ShowtimeNode* node = (ShowtimeNode*)malloc(sizeof(ShowtimeNode));
      if (!node) {
@@ -383,7 +257,7 @@
      node->next = NULL;
      return node;
  }
- 
+
  void add_showtime(Showtime showtime) {
      ShowtimeNode* node = create_showtime_node(showtime);
      if (showtime_list == NULL) {
@@ -397,44 +271,40 @@
      }
      showtime_count++;
  }
- 
+
  void list_movie_showtimes(int movie_id) {
      if (showtime_list == NULL) {
          printf("No showtimes available\n");
          return;
      }
-     
      Movie* movie = find_movie_by_id(movie_id);
      if (movie == NULL) {
          printf("Movie not found\n");
          return;
      }
-     
      printf("\nShowtimes for '%s':\n", movie->name);
      printf("%-5s | %-12s | %-12s | %-8s | %-10s\n", "ID", "Date", "Time", "Hall", "Price");
      printf("----------------------------------------------------\n");
-     
      ShowtimeNode* temp = showtime_list;
      int found = 0;
      while (temp != NULL) {
          if (temp->showtime.movie_id == movie_id) {
-             printf("%-5d | %-12s | %-12s | %-8d | ₹%.2f\n", 
-                    temp->showtime.id, 
-                    temp->showtime.date, 
-                    temp->showtime.time, 
-                    temp->showtime.hall_number, 
+             printf("%-5d | %-12s | %-12s | %-8d | Rs.%.2f\n",
+                    temp->showtime.id,
+                    temp->showtime.date,
+                    temp->showtime.time,
+                    temp->showtime.hall_number,
                     temp->showtime.price);
              found = 1;
          }
          temp = temp->next;
      }
-     
      if (!found) {
          printf("No showtimes available for this movie\n");
      }
      printf("\n");
  }
- 
+
  Showtime* find_showtime_by_id(int id) {
      ShowtimeNode* temp = showtime_list;
      while (temp != NULL) {
@@ -446,141 +316,87 @@
      return NULL;
  }
 
- void edit_showtime_price(int id) {
-     Showtime* showtime = find_showtime_by_id(id);
-     if (showtime == NULL) {
-         printf("Showtime not found\n");
-         return;
-     }
-     
-     Movie* movie = find_movie_by_id(showtime->movie_id);
-     if (movie == NULL) {
-         printf("Associated movie not found\n");
-         return;
-     }
-     
-     printf("\nEditing showtime price for: %s\n", movie->name);
-     printf("Date: %s, Time: %s, Hall: %d\n", 
-            showtime->date, showtime->time, showtime->hall_number);
-     printf("Current price: ₹%.2f\n", showtime->price);
-     
-     printf("Enter new price (₹): ");
-     float new_price;
-     scanf("%f", &new_price);
-     while(getchar() != '\n');
-     
-     if (new_price > 0) {
-         showtime->price = new_price;
-         printf("Showtime price updated to ₹%.2f\n", new_price);
-     } else {
-         printf("Invalid price entered\n");
-     }
- }
- 
  void initialize_seats(Showtime* showtime) {
      for (int i = 0; i < MAX_ROWS; i++) {
          for (int j = 0; j < MAX_COLS; j++) {
-             showtime->seats[i][j] = 0; 
+             showtime->seats[i][j] = 0;
          }
      }
  }
- 
+
  void display_seats(Showtime* showtime) {
      if (showtime == NULL) {
          printf("Invalid showtime\n");
          return;
      }
-     
-     
      Movie* movie = find_movie_by_id(showtime->movie_id);
      if (movie == NULL) {
          printf("Movie information not available\n");
          return;
      }
-     
-     printf("\n=== Seating for %s - %s %s ===\n", 
+     printf("\n=== Seating for %s - %s %s ===\n",
             movie->name, showtime->date, showtime->time);
-     printf("Ticket Price: ₹%.2f\n\n", showtime->price);
-     
+     printf("Ticket Price: Rs.%.2f\n\n", showtime->price);
      printf("         SCREEN\n");
      printf("-------------------------\n\n");
-     
-     
      printf("   ");
      for (int j = 0; j < MAX_COLS; j++) {
          printf("%2d ", j+1);
      }
      printf("\n");
-     
-     
      for (int i = 0; i < MAX_ROWS; i++) {
-         printf("%c  ", 'A' + i); 
+         printf("%c  ", 'A' + i);
          for (int j = 0; j < MAX_COLS; j++) {
              if (showtime->seats[i][j] == 0) {
-                 printf("[ ]"); 
+                 printf("[ ]");
              } else {
-                 printf("[X]"); 
+                 printf("[X]");
              }
          }
          printf("\n");
      }
-     
      printf("\n[ ] - Available    [X] - Booked\n\n");
  }
- 
- 
+
  int add_booking(Booking booking) {
      if (booking_count >= MAX_BOOKINGS) {
          printf("Maximum bookings reached\n");
          return 0;
      }
-     
-     
      Showtime* showtime = find_showtime_by_id(booking.showtime_id);
      if (!showtime) {
          printf("Invalid showtime\n");
          return 0;
      }
-     
-     if (booking.row < 0 || booking.row >= MAX_ROWS || 
+     if (booking.row < 0 || booking.row >= MAX_ROWS ||
          booking.col < 0 || booking.col >= MAX_COLS) {
          printf("Invalid seat selection\n");
          return 0;
      }
-     
      if (showtime->seats[booking.row][booking.col] != 0) {
          printf("Seat already booked\n");
          return 0;
      }
-     
-     
      showtime->seats[booking.row][booking.col] = 1;
-     
-     
      bookings[booking_count] = booking;
      booking_count++;
-     
      return 1;
  }
- 
+
  void list_customer_bookings(int customer_id) {
      int found = 0;
-     
      printf("\n=== Your Bookings ===\n\n");
-     printf("%-5s | %-20s | %-12s | %-12s | %-10s | %-10s\n", 
+     printf("%-5s | %-20s | %-12s | %-12s | %-10s | %-10s\n",
             "ID", "Movie", "Date", "Time", "Seat", "Amount");
      printf("----------------------------------------------------------------------\n");
-     
      for (int i = 0; i < booking_count; i++) {
          if (bookings[i].customer_id == customer_id) {
              Movie* movie = find_movie_by_id(bookings[i].movie_id);
              Showtime* showtime = find_showtime_by_id(bookings[i].showtime_id);
-             
              if (movie && showtime) {
                  char seat[5];
                  sprintf(seat, "%c%d", 'A' + bookings[i].row, bookings[i].col + 1);
-                 
-                 printf("%-5d | %-20s | %-12s | %-12s | %-10s | ₹%-9.2f\n",
+                 printf("%-5d | %-20s | %-12s | %-12s | %-10s | Rs.%-9.2f\n",
                         bookings[i].id,
                         movie->name,
                         showtime->date,
@@ -591,13 +407,12 @@
              }
          }
      }
-     
      if (!found) {
          printf("No bookings found\n");
      }
      printf("\n");
  }
- 
+
  Booking* find_booking_by_id(int id) {
      for (int i = 0; i < booking_count; i++) {
          if (bookings[i].id == id) {
@@ -606,42 +421,34 @@
      }
      return NULL;
  }
- 
+
  void cancel_booking(int id) {
      Booking* booking = find_booking_by_id(id);
      if (!booking) {
          printf("Booking not found\n");
          return;
      }
-     
-     
      Showtime* showtime = find_showtime_by_id(booking->showtime_id);
      if (showtime) {
          showtime->seats[booking->row][booking->col] = 0;
      }
-     
-     
      *booking = bookings[booking_count - 1];
      booking_count--;
-     
      printf("Booking cancelled successfully\n");
  }
- 
+
  void generate_ticket(Booking* booking) {
      if (!booking) {
          printf("Invalid booking\n");
          return;
      }
-     
      Movie* movie = find_movie_by_id(booking->movie_id);
      Showtime* showtime = find_showtime_by_id(booking->showtime_id);
      Customer* customer = find_customer_by_id(booking->customer_id);
-     
      if (!movie || !showtime || !customer) {
          printf("Unable to generate ticket - missing information\n");
          return;
      }
-     
      clear_screen();
      printf("\n");
      printf("=========================================\n");
@@ -659,33 +466,27 @@
      printf("Customer: %s\n", customer->name);
      printf("Phone: %s\n", customer->phone);
      printf("-----------------------------------------\n");
-     printf("Amount Paid: ₹%.2f\n", booking->amount);
+     printf("Amount Paid: Rs.%.2f\n", booking->amount);
      printf("=========================================\n");
      printf(" Thank you for choosing CineBook! Enjoy! \n");
      printf("=========================================\n\n");
  }
- 
- 
+
  int add_customer(Customer customer) {
      if (customer_count >= MAX_CUSTOMERS) {
          printf("Maximum customers reached\n");
          return -1;
      }
-     
-     
      for (int i = 0; i < customer_count; i++) {
          if (strcmp(customers[i].phone, customer.phone) == 0) {
-             return customers[i].id; 
+             return customers[i].id;
          }
      }
-     
-     
      customers[customer_count] = customer;
      customer_count++;
-     
      return customer.id;
  }
- 
+
  Customer* find_customer_by_id(int id) {
      for (int i = 0; i < customer_count; i++) {
          if (customers[i].id == id) {
@@ -694,7 +495,7 @@
      }
      return NULL;
  }
- 
+
  Customer* find_customer_by_phone(char* phone) {
      for (int i = 0; i < customer_count; i++) {
          if (strcmp(customers[i].phone, phone) == 0) {
@@ -703,8 +504,7 @@
      }
      return NULL;
  }
- 
- 
+
  void clear_screen() {
      #ifdef _WIN32
          system("cls");
@@ -712,7 +512,7 @@
          system("clear");
      #endif
  }
- 
+
  void display_header() {
      printf("\n");
      printf("===========================================\n");
@@ -721,99 +521,74 @@
      printf("||                                       ||\n");
      printf("===========================================\n");
  }
- 
- void display_footer() {
-     printf("\n");
-     printf("===========================================\n");
-     printf("||        ShowTime Innovators            ||\n");
-     printf("===========================================\n");
- }
- 
+
  int generate_id(char* entity) {
      static int movie_id = 1000;
      static int showtime_id = 2000;
      static int booking_id = 3000;
      static int customer_id = 4000;
-     
+
      if (strcmp(entity, "movie") == 0) return movie_id++;
      if (strcmp(entity, "showtime") == 0) return showtime_id++;
      if (strcmp(entity, "booking") == 0) return booking_id++;
      if (strcmp(entity, "customer") == 0) return customer_id++;
-     
      return -1;
  }
- 
+
  void get_current_datetime(char* datetime) {
      time_t now;
      struct tm *local_time;
-     
      time(&now);
      local_time = localtime(&now);
-     
      strftime(datetime, MAX_NAME, "%Y-%m-%d %H:%M", local_time);
  }
- 
+
  void initialize_system() {
-     
      movie_list = NULL;
      showtime_list = NULL;
      movie_count = 0;
      showtime_count = 0;
      booking_count = 0;
      customer_count = 0;
-     
-     
      load_demo_data();
  }
- 
+
  void load_demo_data() {
-     
      Movie movies[] = {
-         {generate_id("movie"), "Avengers: Endgame", "Action/Sci-Fi", 
+         {generate_id("movie"), "Avengers: Endgame", "Action/Sci-Fi",
           "The Avengers take a final stand against Thanos.", 181, 250.0},
-         {generate_id("movie"), "The Shawshank Redemption", "Drama", 
-          "Two imprisoned men bond over a number of years.", 142, 200.0},
-         {generate_id("movie"), "Inception", "Sci-Fi/Action", 
-          "A thief who steals corporate secrets through dream-sharing technology.", 148, 280.0},
-         {generate_id("movie"), "Parasite", "Thriller/Drama", 
-          "Greed and class discrimination threaten the relationship between two families.", 132, 220.0}
+         {generate_id("movie"), "The Shawshank Redemption", "Drama",
+          "Two imprisoned men bond over a number of years.", 142, 200.0}
      };
-     
-     for (int i = 0; i < 4; i++) {
+     for (int i = 0; i < 2; i++) { 
          add_movie(movies[i]);
      }
-     
-     
-     char dates[][MAX_NAME] = {"2025-04-15", "2025-04-16", "2025-04-17"};
-     char times[][MAX_NAME] = {"10:00 AM", "1:30 PM", "4:45 PM", "8:00 PM"};
-     
-     for (int movie_idx = 0; movie_idx < 4; movie_idx++) {
-         for (int date_idx = 0; date_idx < 2; date_idx++) {
-             for (int time_idx = 0; time_idx < 2; time_idx++) {
+
+     char dates[][MAX_NAME] = {"2025-04-15", "2025-04-16"}; 
+     char times[][MAX_NAME] = {"10:00 AM", "1:30 PM"}; 
+
+     for (int movie_idx = 0; movie_idx < 2; movie_idx++) {
+         for (int date_idx = 0; date_idx < 1; date_idx++) { 
+             for (int time_idx = 0; time_idx < 1; time_idx++) {
                  Showtime showtime;
                  showtime.id = generate_id("showtime");
                  showtime.movie_id = movies[movie_idx].id;
                  strcpy(showtime.date, dates[date_idx]);
-                 strcpy(showtime.time, times[time_idx + movie_idx % 2]);
-                 
-                 showtime.price = movies[movie_idx].base_price + (time_idx * 20) + (date_idx == 1 ? 30 : 0);
-                 showtime.hall_number = 1 + (movie_idx + date_idx) % 3;
-                 
+                 strcpy(showtime.time, times[time_idx]);
+                 showtime.price = movies[movie_idx].base_price; 
+                 showtime.hall_number = 1; 
                  initialize_seats(&showtime);
                  
-                 
-                 for (int k = 0; k < 10; k++) {
+                 for (int k = 0; k < 2; k++) {
                      int row = rand() % MAX_ROWS;
                      int col = rand() % MAX_COLS;
                      showtime.seats[row][col] = 1;
                  }
-                 
                  add_showtime(showtime);
              }
          }
      }
-     
-     
+
      Customer customer;
      customer.id = generate_id("customer");
      strcpy(customer.name, "John Doe");
@@ -822,95 +597,8 @@
      add_customer(customer);
  }
 
- void pricing_management_menu() {
-     int choice;
-     
-     do {
-         clear_screen();
-         display_header();
-         printf("\n=== PRICING MANAGEMENT ===\n\n");
-         printf("1. Manage Movie Base Pricing\n");
-         printf("2. Edit Showtime Pricing\n");
-         printf("3. View All Pricing\n");
-         printf("4. Return to Admin Menu\n");
-         printf("\nEnter your choice: ");
-         scanf("%d", &choice);
-         while(getchar() != '\n'); 
-         
-         switch(choice) {
-             case 1: {
-                 list_all_movies();
-                 printf("Enter movie ID to manage pricing (0 to cancel): ");
-                 int movie_id;
-                 scanf("%d", &movie_id);
-                 while(getchar() != '\n');
-                 
-                 if (movie_id != 0) {
-                     manage_movie_pricing(movie_id);
-                 }
-                 printf("Press enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 2: {
-                 printf("Select a movie to view its showtimes:\n");
-                 list_all_movies();
-                 printf("Enter movie ID: ");
-                 int movie_id;
-                 scanf("%d", &movie_id);
-                 while(getchar() != '\n');
-                 
-                 list_movie_showtimes(movie_id);
-                 printf("Enter showtime ID to edit price (0 to cancel): ");
-                 int showtime_id;
-                 scanf("%d", &showtime_id);
-                 while(getchar() != '\n');
-                 
-                 if (showtime_id != 0) {
-                     edit_showtime_price(showtime_id);
-                 }
-                 printf("Press enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 3: {
-                 printf("\n=== ALL PRICING OVERVIEW ===\n");
-                 list_all_movies();
-                 printf("\nDetailed Showtime Pricing:\n");
-                 printf("%-5s | %-20s | %-12s | %-12s | %-8s | %-10s\n", 
-                        "ID", "Movie", "Date", "Time", "Hall", "Price");
-                 printf("------------------------------------------------------------------------\n");
-                 
-                 ShowtimeNode* temp = showtime_list;
-                 while (temp != NULL) {
-                     Movie* movie = find_movie_by_id(temp->showtime.movie_id);
-                     if (movie) {
-                         printf("%-5d | %-20s | %-12s | %-12s | %-8d | ₹%-9.2f\n",
-                                temp->showtime.id,
-                                movie->name,
-                                temp->showtime.date,
-                                temp->showtime.time,
-                                temp->showtime.hall_number,
-                                temp->showtime.price);
-                     }
-                     temp = temp->next;
-                 }
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 4:
-                 break;
-             default:
-                 printf("Invalid choice! Press enter to continue...");
-                 getchar();
-         }
-     } while(choice != 4);
- }
-
  void movie_management_menu() {
      int choice;
-     
      do {
          clear_screen();
          display_header();
@@ -918,36 +606,28 @@
          printf("1. Add New Movie\n");
          printf("2. View All Movies\n");
          printf("3. Edit Movie\n");
-         printf("4. Delete Movie\n");
-         printf("5. Return to Admin Menu\n");
+         printf("4. Return to Admin Menu\n"); 
          printf("\nEnter your choice: ");
          scanf("%d", &choice);
          while(getchar() != '\n');
-         
          switch(choice) {
              case 1: {
                  Movie movie;
                  movie.id = generate_id("movie");
-                 
                  printf("Enter movie name: ");
                  fgets(movie.name, MAX_NAME, stdin);
                  movie.name[strcspn(movie.name, "\n")] = 0;
-                 
                  printf("Enter genre: ");
                  fgets(movie.genre, MAX_NAME, stdin);
                  movie.genre[strcspn(movie.genre, "\n")] = 0;
-                 
                  printf("Enter description: ");
                  fgets(movie.description, MAX_DESC, stdin);
                  movie.description[strcspn(movie.description, "\n")] = 0;
-                 
                  printf("Enter duration (minutes): ");
                  scanf("%d", &movie.duration);
-                 
-                 printf("Enter base ticket price (₹): ");
+                 printf("Enter base ticket price (Rs.): ");
                  scanf("%f", &movie.base_price);
                  while(getchar() != '\n');
-                 
                  add_movie(movie);
                  printf("Movie added successfully!\n");
                  printf("Press enter to continue...");
@@ -965,7 +645,6 @@
                  int movie_id;
                  scanf("%d", &movie_id);
                  while(getchar() != '\n');
-                 
                  if (movie_id != 0) {
                      edit_movie(movie_id);
                  }
@@ -973,51 +652,27 @@
                  getchar();
                  break;
              }
-             case 4: {
-                 list_all_movies();
-                 printf("Enter movie ID to delete (0 to cancel): ");
-                 int movie_id;
-                 scanf("%d", &movie_id);
-                 while(getchar() != '\n');
-                 
-                 if (movie_id != 0) {
-                     printf("Are you sure you want to delete this movie? (y/n): ");
-                     char confirm;
-                     scanf(" %c", &confirm);
-                     while(getchar() != '\n');
-                     
-                     if (tolower(confirm) == 'y') {
-                         delete_movie(movie_id);
-                     }
-                 }
-                 printf("Press enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 5:
+             case 4: 
                  break;
              default:
                  printf("Invalid choice! Press enter to continue...");
                  getchar();
          }
-     } while(choice != 5);
+     } while(choice != 4); 
  }
 
  void showtime_management_menu() {
      int choice;
-     
      do {
          clear_screen();
          display_header();
          printf("\n=== SHOWTIME MANAGEMENT ===\n\n");
          printf("1. Add New Showtime\n");
          printf("2. View Movie Showtimes\n");
-         printf("3. View All Showtimes\n");
-         printf("4. Return to Admin Menu\n");
+         printf("3. Return to Admin Menu\n"); 
          printf("\nEnter your choice: ");
          scanf("%d", &choice);
          while(getchar() != '\n');
-         
          switch(choice) {
              case 1: {
                  list_all_movies();
@@ -1025,7 +680,6 @@
                  int movie_id;
                  scanf("%d", &movie_id);
                  while(getchar() != '\n');
-                 
                  Movie* movie = find_movie_by_id(movie_id);
                  if (!movie) {
                      printf("Movie not found!\n");
@@ -1033,29 +687,21 @@
                      getchar();
                      break;
                  }
-                 
                  Showtime showtime;
                  showtime.id = generate_id("showtime");
                  showtime.movie_id = movie_id;
-                 
                  printf("Enter date (YYYY-MM-DD): ");
                  fgets(showtime.date, MAX_NAME, stdin);
                  showtime.date[strcspn(showtime.date, "\n")] = 0;
-                 
                  printf("Enter time (HH:MM AM/PM): ");
                  fgets(showtime.time, MAX_NAME, stdin);
                  showtime.time[strcspn(showtime.time, "\n")] = 0;
-                 
                  printf("Enter hall number: ");
                  scanf("%d", &showtime.hall_number);
-                 
-                 printf("Enter ticket price (₹) [Base: ₹%.2f]: ", movie->base_price);
-                 scanf("%f", &showtime.price);
+                 showtime.price = movie->base_price; 
                  while(getchar() != '\n');
-                 
                  initialize_seats(&showtime);
                  add_showtime(showtime);
-                 
                  printf("Showtime added successfully!\n");
                  printf("Press enter to continue...");
                  getchar();
@@ -1067,273 +713,43 @@
                  int movie_id;
                  scanf("%d", &movie_id);
                  while(getchar() != '\n');
-                 
                  list_movie_showtimes(movie_id);
                  printf("Press enter to continue...");
                  getchar();
                  break;
              }
-             case 3: {
-                 printf("\n=== ALL SHOWTIMES ===\n");
-                 printf("%-5s | %-20s | %-12s | %-12s | %-8s | %-10s\n", 
-                        "ID", "Movie", "Date", "Time", "Hall", "Price");
-                 printf("------------------------------------------------------------------------\n");
-                 
-                 ShowtimeNode* temp = showtime_list;
-                 while (temp != NULL) {
-                     Movie* movie = find_movie_by_id(temp->showtime.movie_id);
-                     if (movie) {
-                         printf("%-5d | %-20s | %-12s | %-12s | %-8d | ₹%-9.2f\n",
-                                temp->showtime.id,
-                                movie->name,
-                                temp->showtime.date,
-                                temp->showtime.time,
-                                temp->showtime.hall_number,
-                                temp->showtime.price);
-                     }
-                     temp = temp->next;
-                 }
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 4:
+             case 3: 
                  break;
              default:
                  printf("Invalid choice! Press enter to continue...");
                  getchar();
          }
-     } while(choice != 4);
- }
-
- void reports_menu() {
-     int choice;
-     
-     do {
-         clear_screen();
-         display_header();
-         printf("\n=== REPORTS & ANALYTICS ===\n\n");
-         printf("1. Booking Summary\n");
-         printf("2. Revenue Report\n");
-         printf("3. Movie Performance\n");
-         printf("4. Customer List\n");
-         printf("5. Return to Admin Menu\n");
-         printf("\nEnter your choice: ");
-         scanf("%d", &choice);
-         while(getchar() != '\n');
-         
-         switch(choice) {
-             case 1: {
-                 printf("\n=== BOOKING SUMMARY ===\n");
-                 printf("Total Bookings: %d\n", booking_count);
-                 printf("Total Customers: %d\n", customer_count);
-                 printf("Total Movies: %d\n", movie_count);
-                 printf("Total Showtimes: %d\n", showtime_count);
-                 
-                 printf("\nRecent Bookings:\n");
-                 printf("%-5s | %-15s | %-20s | %-12s | %-8s | %-10s\n", 
-                        "ID", "Customer", "Movie", "Date", "Seat", "Amount");
-                 printf("------------------------------------------------------------------------\n");
-                 
-                 int displayed = 0;
-                 for (int i = booking_count - 1; i >= 0 && displayed < 10; i--) {
-                     Customer* customer = find_customer_by_id(bookings[i].customer_id);
-                     Movie* movie = find_movie_by_id(bookings[i].movie_id);
-                     Showtime* showtime = find_showtime_by_id(bookings[i].showtime_id);
-                     
-                     if (customer && movie && showtime) {
-                         char seat[5];
-                         sprintf(seat, "%c%d", 'A' + bookings[i].row, bookings[i].col + 1);
-                         
-                         printf("%-5d | %-15s | %-20s | %-12s | %-8s | ₹%-9.2f\n",
-                                bookings[i].id,
-                                customer->name,
-                                movie->name,
-                                showtime->date,
-                                seat,
-                                bookings[i].amount);
-                         displayed++;
-                     }
-                 }
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 2: {
-                 printf("\n=== REVENUE REPORT ===\n");
-                 float total_revenue = 0;
-                 int movie_revenues[MAX_MOVIES];
-                 float movie_amounts[MAX_MOVIES];
-                 int movie_ids[MAX_MOVIES];
-                 int unique_movies = 0;
-                 
-                 
-                 for (int i = 0; i < MAX_MOVIES; i++) {
-                     movie_revenues[i] = 0;
-                     movie_amounts[i] = 0.0;
-                     movie_ids[i] = -1;
-                 }
-                 
-                 
-                 for (int i = 0; i < booking_count; i++) {
-                     total_revenue += bookings[i].amount;
-                     
-                     
-                     int movie_index = -1;
-                     for (int j = 0; j < unique_movies; j++) {
-                         if (movie_ids[j] == bookings[i].movie_id) {
-                             movie_index = j;
-                             break;
-                         }
-                     }
-                     
-                     if (movie_index == -1 && unique_movies < MAX_MOVIES) {
-                         movie_index = unique_movies;
-                         movie_ids[unique_movies] = bookings[i].movie_id;
-                         unique_movies++;
-                     }
-                     
-                     if (movie_index != -1) {
-                         movie_revenues[movie_index]++;
-                         movie_amounts[movie_index] += bookings[i].amount;
-                     }
-                 }
-                 
-                 printf("Total Revenue: ₹%.2f\n", total_revenue);
-                 printf("Total Tickets Sold: %d\n", booking_count);
-                 if (booking_count > 0) {
-                     printf("Average Ticket Price: ₹%.2f\n", total_revenue / booking_count);
-                 }
-                 
-                 printf("\nRevenue by Movie:\n");
-                 printf("%-20s | %-8s | %-12s\n", "Movie", "Tickets", "Revenue");
-                 printf("------------------------------------------\n");
-                 
-                 for (int i = 0; i < unique_movies; i++) {
-                     Movie* movie = find_movie_by_id(movie_ids[i]);
-                     if (movie) {
-                         printf("%-20s | %-8d | ₹%-11.2f\n",
-                                movie->name,
-                                movie_revenues[i],
-                                movie_amounts[i]);
-                     }
-                 }
-                 
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 3: {
-                 printf("\n=== MOVIE PERFORMANCE ===\n");
-                 printf("%-20s | %-10s | %-12s | %-15s\n", 
-                        "Movie", "Showtimes", "Tickets Sold", "Occupancy %");
-                 printf("-----------------------------------------------------------\n");
-                 
-                 MovieNode* temp = movie_list;
-                 while (temp != NULL) {
-                     int showtimes = 0;
-                     int tickets_sold = 0;
-                     int total_seats = 0;
-                     
-                     
-                     ShowtimeNode* st_temp = showtime_list;
-                     while (st_temp != NULL) {
-                         if (st_temp->showtime.movie_id == temp->movie.id) {
-                             showtimes++;
-                             total_seats += MAX_ROWS * MAX_COLS;
-                             
-                             
-                             for (int r = 0; r < MAX_ROWS; r++) {
-                                 for (int c = 0; c < MAX_COLS; c++) {
-                                     if (st_temp->showtime.seats[r][c] == 1) {
-                                         tickets_sold++;
-                                     }
-                                 }
-                             }
-                         }
-                         st_temp = st_temp->next;
-                     }
-                     
-                     float occupancy = (total_seats > 0) ? 
-                                      ((float)tickets_sold / total_seats) * 100 : 0;
-                     
-                     printf("%-20s | %-10d | %-12d | %-14.1f%%\n",
-                            temp->movie.name,
-                            showtimes,
-                            tickets_sold,
-                            occupancy);
-                     
-                     temp = temp->next;
-                 }
-                 
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 4: {
-                 printf("\n=== CUSTOMER LIST ===\n");
-                 printf("%-5s | %-20s | %-15s | %-25s | %-8s\n", 
-                        "ID", "Name", "Phone", "Email", "Bookings");
-                 printf("------------------------------------------------------------------------\n");
-                 
-                 for (int i = 0; i < customer_count; i++) {
-                     int customer_bookings = 0;
-                     for (int j = 0; j < booking_count; j++) {
-                         if (bookings[j].customer_id == customers[i].id) {
-                             customer_bookings++;
-                         }
-                     }
-                     
-                     printf("%-5d | %-20s | %-15s | %-25s | %-8d\n",
-                            customers[i].id,
-                            customers[i].name,
-                            customers[i].phone,
-                            customers[i].email,
-                            customer_bookings);
-                 }
-                 
-                 printf("\nPress enter to continue...");
-                 getchar();
-                 break;
-             }
-             case 5:
-                 break;
-             default:
-                 printf("Invalid choice! Press enter to continue...");
-                 getchar();
-         }
-     } while(choice != 5);
+     } while(choice != 3); 
  }
 
  void admin_menu() {
      char password[MAX_NAME];
-     
      printf("Enter admin password: ");
      fgets(password, MAX_NAME, stdin);
      password[strcspn(password, "\n")] = 0;
-     
      if (strcmp(password, ADMIN_PASSWORD) != 0) {
          printf("Invalid password!\n");
          printf("Press enter to continue...");
          getchar();
          return;
      }
-     
+
      int choice;
-     
      do {
          clear_screen();
          display_header();
          printf("\n=== ADMIN PANEL ===\n\n");
          printf("1. Movie Management\n");
          printf("2. Showtime Management\n");
-         printf("3. Pricing Management\n");
-         printf("4. Reports & Analytics\n");
-         printf("5. Return to Main Menu\n");
+         printf("3. Return to Main Menu\n"); 
          printf("\nEnter your choice: ");
          scanf("%d", &choice);
          while(getchar() != '\n');
-         
          switch(choice) {
              case 1:
                  movie_management_menu();
@@ -1341,29 +757,21 @@
              case 2:
                  showtime_management_menu();
                  break;
-             case 3:
-                 pricing_management_menu();
-                 break;
-             case 4:
-                 reports_menu();
-                 break;
-             case 5:
+             case 3: 
                  break;
              default:
                  printf("Invalid choice! Press enter to continue...");
                  getchar();
          }
-     } while(choice != 5);
+     } while(choice != 3); 
  }
 
  void booking_menu() {
      int choice;
      static int current_customer_id = -1;
-     
      do {
          clear_screen();
          display_header();
-         
          if (current_customer_id == -1) {
              printf("\n=== CUSTOMER LOGIN/REGISTER ===\n\n");
              printf("1. Login with Phone Number\n");
@@ -1372,14 +780,12 @@
              printf("\nEnter your choice: ");
              scanf("%d", &choice);
              while(getchar() != '\n');
-             
              switch(choice) {
                  case 1: {
                      printf("Enter your phone number: ");
                      char phone[MAX_NAME];
                      fgets(phone, MAX_NAME, stdin);
                      phone[strcspn(phone, "\n")] = 0;
-                     
                      Customer* customer = find_customer_by_phone(phone);
                      if (customer) {
                          current_customer_id = customer->id;
@@ -1396,19 +802,15 @@
                  case 2: {
                      Customer customer;
                      customer.id = generate_id("customer");
-                     
                      printf("Enter your name: ");
                      fgets(customer.name, MAX_NAME, stdin);
                      customer.name[strcspn(customer.name, "\n")] = 0;
-                     
                      printf("Enter your phone number: ");
                      fgets(customer.phone, MAX_NAME, stdin);
                      customer.phone[strcspn(customer.phone, "\n")] = 0;
-                     
                      printf("Enter your email: ");
                      fgets(customer.email, MAX_NAME, stdin);
                      customer.email[strcspn(customer.email, "\n")] = 0;
-                     
                      int result = add_customer(customer);
                      if (result != -1) {
                          current_customer_id = customer.id;
@@ -1435,25 +837,22 @@
              printf("1. Browse Movies\n");
              printf("2. Book Ticket\n");
              printf("3. View My Bookings\n");
-             printf("4. Cancel Booking\n");
-             printf("5. Logout\n");
+             printf("4. Logout\n"); 
              printf("\nEnter your choice: ");
              scanf("%d", &choice);
              while(getchar() != '\n');
-             
              switch(choice) {
                  case 1:
-                     list_movies_with_pricing();
+                     list_all_movies(); 
                      printf("Press enter to continue...");
                      getchar();
                      break;
                  case 2: {
-                     list_movies_with_pricing();
+                     list_all_movies(); 
                      printf("Enter movie ID to book: ");
                      int movie_id;
                      scanf("%d", &movie_id);
                      while(getchar() != '\n');
-                     
                      Movie* movie = find_movie_by_id(movie_id);
                      if (!movie) {
                          printf("Movie not found!\n");
@@ -1461,13 +860,11 @@
                          getchar();
                          break;
                      }
-                     
                      list_movie_showtimes(movie_id);
                      printf("Enter showtime ID: ");
                      int showtime_id;
                      scanf("%d", &showtime_id);
                      while(getchar() != '\n');
-                     
                      Showtime* showtime = find_showtime_by_id(showtime_id);
                      if (!showtime) {
                          printf("Showtime not found!\n");
@@ -1475,28 +872,22 @@
                          getchar();
                          break;
                      }
-                     
                      display_seats(showtime);
-                     
                      printf("Enter seat row (A-J): ");
                      char row_char;
                      scanf(" %c", &row_char);
-                     
                      printf("Enter seat number (1-%d): ", MAX_COLS);
                      int col_num;
                      scanf("%d", &col_num);
                      while(getchar() != '\n');
-                     
                      int row = toupper(row_char) - 'A';
                      int col = col_num - 1;
-                     
                      if (row < 0 || row >= MAX_ROWS || col < 0 || col >= MAX_COLS) {
                          printf("Invalid seat selection!\n");
                          printf("Press enter to continue...");
                          getchar();
                          break;
                      }
-                     
                      Booking booking;
                      booking.id = generate_id("booking");
                      booking.customer_id = current_customer_id;
@@ -1506,14 +897,12 @@
                      booking.col = col;
                      booking.amount = showtime->price;
                      get_current_datetime(booking.booking_time);
-                     
                      if (add_booking(booking)) {
                          printf("\nBooking successful!\n");
-                         printf("Ticket Price: ₹%.2f\n", booking.amount);
+                         printf("Ticket Price: Rs.%.2f\n\n", booking.amount);
                          printf("Generating ticket...\n");
                          printf("Press enter to view ticket...");
                          getchar();
-                         
                          Booking* saved_booking = find_booking_by_id(booking.id);
                          if (saved_booking) {
                              generate_ticket(saved_booking);
@@ -1532,33 +921,7 @@
                      printf("Press enter to continue...");
                      getchar();
                      break;
-                 case 4: {
-                     list_customer_bookings(current_customer_id);
-                     printf("Enter booking ID to cancel (0 to go back): ");
-                     int booking_id;
-                     scanf("%d", &booking_id);
-                     while(getchar() != '\n');
-                     
-                     if (booking_id != 0) {
-                         Booking* booking = find_booking_by_id(booking_id);
-                         if (booking && booking->customer_id == current_customer_id) {
-                             printf("Are you sure you want to cancel this booking? (y/n): ");
-                             char confirm;
-                             scanf(" %c", &confirm);
-                             while(getchar() != '\n');
-                             
-                             if (tolower(confirm) == 'y') {
-                                 cancel_booking(booking_id);
-                             }
-                         } else {
-                             printf("Booking not found or not authorized!\n");
-                         }
-                     }
-                     printf("Press enter to continue...");
-                     getchar();
-                     break;
-                 }
-                 case 5:
+                 case 4: 
                      current_customer_id = -1;
                      printf("Logged out successfully!\n");
                      printf("Press enter to continue...");
@@ -1569,12 +932,11 @@
                      getchar();
              }
          }
-     } while(choice != 3 && choice != 5);
+     } while(choice != 3 && choice != 4); 
  }
 
  void customer_menu() {
      int choice;
-     
      do {
          clear_screen();
          display_header();
@@ -1585,10 +947,9 @@
          printf("\nEnter your choice: ");
          scanf("%d", &choice);
          while(getchar() != '\n');
-         
          switch(choice) {
              case 1:
-                 list_movies_with_pricing();
+                 list_all_movies(); 
                  printf("Press enter to continue...");
                  getchar();
                  break;
@@ -1606,7 +967,6 @@
 
  void main_menu() {
      int choice;
-     
      do {
          clear_screen();
          display_header();
@@ -1617,7 +977,6 @@
          printf("\nEnter your choice: ");
          scanf("%d", &choice);
          while(getchar() != '\n');
-         
          switch(choice) {
              case 1:
                  customer_menu();
@@ -1627,7 +986,7 @@
                  break;
              case 3:
                  printf("\nThank you for using CineBook!\n");
-                 display_footer();
+                 
                  break;
              default:
                  printf("Invalid choice! Press enter to continue...");
@@ -1642,8 +1001,8 @@
      printf("System initialized successfully!\n");
      printf("Press enter to continue...");
      getchar();
-     
      main_menu();
+
      
      MovieNode* movie_temp = movie_list;
      while (movie_temp != NULL) {
@@ -1651,13 +1010,13 @@
          free(movie_temp);
          movie_temp = next;
      }
-     
+
      ShowtimeNode* showtime_temp = showtime_list;
      while (showtime_temp != NULL) {
          ShowtimeNode* next = showtime_temp->next;
          free(showtime_temp);
          showtime_temp = next;
      }
-     
+
      return 0;
  }
